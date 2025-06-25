@@ -1,148 +1,101 @@
-# OneNab Data Pipeline Project
+# โครงการ OneNab Data Pipeline
 
-This repository contains Apache Airflow DAGs and Python scripts to process and load data for the OneNab data warehouse. It includes daily, aggregation, and master data pipelines built with Airflow and PySpark/pandas.
+![OneNab Data Pipeline Flowchart](A_flowchart_diagram_in_a_digital_vector_graphic_fo.png)
 
-## Project Structure
+คลังนี้เป็นการติดตั้งเฟรมเวิร์ก ETL (Extract, Transform, Load) ฉบับครบวงจรสำหรับคลังข้อมูล **OneNab** โดยอัตโนมัติการดึงข้อมูลประจำวัน การสรุปผล และการดูแลรักษาชุดข้อมูลเชิงปฏิบัติการ (เช่น ค่าตัวเลข AOP และข้อมูลใบแจ้งหนี้) เพื่อให้ระบบต้นทางส่งข้อมูลที่สะอาดและทันเวลาไปยังแพลตฟอร์มการวิเคราะห์และการรายงาน
 
-```
-.
-├── OneNab
-│   ├── dags
-│   │   ├── Dag_OneNab_JobAllAOPDaily.py
-│   │   ├── Dag_OneNab_JobDailyAGG.py
-│   │   ├── Dag_OneNab_JobMaster.py
-│   │   ├── Dag_OneNab_SSC_FactAllDataInvoice.py
-│   │   ├── Dag_OneNab_SSC_FactAllDataInvoice_Delete.py
-│   │   └── Dag_RTMSTG_SIN_All_Master.py
-│   ├── files
-│   │   ├── OneNab_SCC_AggActOutletYM.py
-│   │   ├── OneNab_SCC_AggAssetCoolerYM.py
-│   │   ├── OneNab_SSC_AggDataAssetYM.py
-│   │   └── ...
-│   ├── json
-│   │   └── (configuration JSON files)
-│   └── text
-│       └── (text templates or logs)
-├── README.md
-```
+## วัตถุประสงค์
 
-## Prerequisites
+* **อัตโนมัติการไหลของข้อมูล** จากระบบต้นทางไปยังชั้น staging และ mart
+* **แปลงข้อมูลดิบ** (เช่น ยอดขาย ใบแจ้งหนี้ มิติต่างๆ) ให้เป็นตารางที่สอดคล้องกัน
+* **สร้างเมตริกสรุป** (เช่น จำนวนสาขาที่ใช้งานตามเดือน, ประสิทธิภาพของสินทรัพย์) สำหรับงาน Business Intelligence
+* **บำรุงรักษามิติมาสเตอร์** เพื่อให้การเชื่อมตารางข้าม pipeline มีความสอดคล้อง
 
-* Python 3.7+
-* Apache Airflow 2.x
-* Database connectors (e.g., `pymssql`, `pyodbc`)
-* pandas, PySpark, SQLAlchemy
+## เครื่องมือที่ใช้
 
-## Installation
+* **Apache Airflow (v2.x)**: จัดการ workflow และการตั้งเวลา
+* **Python (3.7+)**: เขียนสคริปต์ทั่วไปและนิยาม DAG
+* **PySpark**: ประมวลผลข้อมูลขนาดใหญ่แบบกระจาย
+* **pandas**: ประมวลผลข้อมูลขนาดเล็กในหน่วยความจำ และสร้าง pivot table
+* **SQLAlchemy**, **pymssql**, **pyodbc**: เชื่อมต่อฐานข้อมูล SQL Server และ RDBMS อื่นๆ
+* **Docker & Docker Compose**: สร้างคอนเทนเนอร์สำหรับ Airflow และบริการอื่นๆ
+* **JSON**: ไฟล์ตั้งค่าภายนอกสำหรับปรับพารามิเตอร์งาน
 
-1. Clone the repository:
-
-   ```bash
-   ```
-
-git clone <repo-url>
-cd one-nab
-
-````
-
-2. (Optional) Create and activate a virtual environment:
-
-   ```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-venv\\Scripts\\activate   # Windows
-````
-
-3. Install dependencies:
-
-   ```bash
-   ```
-
-pip install -r requirements.txt
-
-````
-
-> If `requirements.txt` is not provided, install dependencies manually:
+## โครงสร้างโปรเจกต์
 
 ```bash
-pip install apache-airflow pandas pyspark sqlalchemy pymssql
-````
+.
+├── OneNab/                 # โฟลเดอร์ Airflow DAG definitions
+├── files/                  # สคริปต์ Python สำหรับแปลงข้อมูล
+├── json/                   # แม่แบบตั้งค่าการเชื่อมต่อและเส้นทางไฟล์
+├── text/                   # แม่แบบข้อความและตัวช่วย logging
+├── README.md               # ไฟล์นี้
+└── requirements.txt        # รายการ dependency ของ Python
+```
 
-## Configuration
+## ความต้องการล่วงหน้า (Prerequisites)
 
-* Place custom JSON configuration files in `OneNab/json/`.
-* Update Airflow connections and variables to match your environment.
-* Ensure target databases and schemas exist and Airflow has proper credentials.
+* ติดตั้ง Docker และ Docker Compose
+* สภาพแวดล้อม Python 3.7 ขึ้นไป
+* ตั้งค่า Airflow connections และ variables ให้เรียบร้อย
+* ฐานข้อมูลเป้าหมาย (เช่น SQL Server) สามารถเข้าถึงได้ด้วยสิทธิ์ที่ถูกต้อง
 
-## Usage
+## การติดตั้งและใช้งาน
 
-1. Copy the `OneNab` directory to your Airflow `dags_folder`.
-2. Start the Airflow scheduler and webserver:
+1. โคลนและเข้าสู่โฟลเดอร์โปรเจกต์:
 
    ```bash
    ```
 
-airflow scheduler
+git clone  cd one-nab
+
+````
+2. (ถ้ามี) เรียกใช้ Docker Compose:
+   ```bash
+docker-compose up -d  # สตาร์ท Airflow scheduler, webserver, database
+````
+
+3. สร้าง virtual environment และติดตั้ง dependencies:
+
+   ```bash
+   ```
+
+python -m venv venv source venv/bin/activate    # Linux/macOS venv\Scripts\activate   # Windows pip install -r requirements.txt
+
+````
+4. คัดลอกโฟลเดอร์ `OneNab` ไปยัง `dags_folder` ของ Airflow หรือปรับตัวแปร `AIRFLOW__CORE__DAGS_FOLDER`
+5. (ถ้าไม่ใช้ Docker) สตาร์ท Airflow Scheduler และ Webserver:
+   ```bash
+airflow scheduler &
 airflow webserver
-
 ````
 
-3. Trigger DAGs via the Airflow UI or CLI:
-
-   ```bash
-airflow dags trigger Dag_OneNab_JobAllAOPDaily
-````
-
-## DAGs Overview
-
-| DAG Name                                   | Description                            |
-| ------------------------------------------ | -------------------------------------- |
-| `Dag_OneNab_JobAllAOPDaily`                | Daily AOP data processing and loading. |
-| `Dag_OneNab_JobDailyAGG`                   | Daily aggregation pipelines.           |
-| `Dag_OneNab_JobMaster`                     | Loads master dimension tables.         |
-| `Dag_OneNab_SSC_FactAllDataInvoice`        | Processes and loads invoice fact data. |
-| `Dag_OneNab_SSC_FactAllDataInvoice_Delete` | Cleans up old invoice data.            |
-| `Dag_RTMSTG_SIN_All_Master`                | Staging master tables for RTM data.    |
-
-## Data Processing Scripts
-
-The `files` directory contains Python scripts that perform transformations and load data into target tables. Key scripts include:
-
-* `OneNab_SCC_AggActOutletYM.py`: Aggregates active outlets by year-month.
-* `OneNab_SSC_FactAllDataInvoice.py`: Processes and loads invoice fact data.
-* `RTMSTG_Sales_ONENAB_SSC_DimCustomer.py`: Builds the customer dimension for sales data.
-
-## Contributing
-
-1. Fork the repository.
-2. Create a feature branch:
+6. เรียกใช้งานหรือกำหนดเวลารัน DAG ผ่าน UI หรือ CLI:
 
    ```bash
    ```
 
-git checkout -b feature/my-feature
-
-````
-
-3. Commit your changes:
-
-   ```bash
-git commit -m "Add new feature"
-````
-
-4. Push to your branch:
-
-   ```bash
-   ```
-
-git push origin feature/my-feature
+airflow dags trigger Dag\_OneNab\_JobAllAOPDaily
 
 ```
 
-5. Open a pull request.
+## DAGs & สคริปต์สำคัญ
 
-## License
+| ชื่อ DAG                                 | บทบาท                                          |
+|-------------------------------------------|-----------------------------------------------|
+| `Dag_OneNab_JobAllAOPDaily`               | ดึงและประมวลผลข้อมูล AOP ประจำวัน             |
+| `Dag_OneNab_JobDailyAGG`                  | คำนวณการสรุปผลรายวัน                          |
+| `Dag_OneNab_JobMaster`                    | โหลด/อัปเดตมิติมาสเตอร์                       |
+| `Dag_OneNab_SSC_FactAllDataInvoice`       | แปลงและโหลดข้อมูลใบแจ้งหนี้                     |
+| `Dag_OneNab_SSC_FactAllDataInvoice_Delete`| ลบข้อมูลใบแจ้งหนี้เก่าก่อนช่วงเวลาที่กำหนด    |
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+สคริปต์ Python สำหรับแปลงข้อมูลอยู่ในโฟลเดอร์ `files/` เช่น:
+
+- **OneNab_SCC_AggActOutletYM.py**: สรุปจำนวนสาขาที่ใช้งานตามปี-เดือน
+- **OneNab_SSC_FactAllDataInvoice.py**: แยกแยะข้อมูลใบแจ้งหนี้และเขียนลงใน fact table
+
+---
+
+*สำหรับผู้ร่วมพัฒนา: Fork โปรเจกต์, สร้าง feature branch, แล้วส่ง Pull Request ตามแนวทางการพัฒนา*
 
 ```
